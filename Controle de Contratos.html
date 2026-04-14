@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Contratos e Garantias</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      background: #f4f6f8;
+      color: #222;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      margin-bottom: 20px;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .top-bar input {
+      padding: 10px 12px;
+      width: 320px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .legend span {
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+
+    .leg-vencido { background: #f8d7da; color: #842029; }
+    .leg-hoje { background: #fff3cd; color: #856404; }
+    .leg-alerta { background: #ffe5b4; color: #8a5300; }
+    .leg-ok { background: #d1e7dd; color: #0f5132; }
+    .leg-info { background: #e2e3e5; color: #41464b; }
+    .leg-garantia { background: #e7e3ff; color: #4b3fa8; }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1220px;
+    }
+
+    thead {
+      background: #d9d9d9;
+    }
+
+    th, td {
+      border: 1px solid #444;
+      padding: 10px 8px;
+      text-align: left;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    th {
+      text-transform: uppercase;
+      font-size: 13px;
+      letter-spacing: 0.3px;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    tbody tr:hover {
+      background: #f1f7ff;
+    }
+
+    .status {
+      font-weight: bold;
+      text-align: center;
+      border-radius: 6px;
+      padding: 6px 8px;
+      display: inline-block;
+      min-width: 110px;
+      line-height: 1.2;
+    }
+
+    .vencido {
+      background: #f8d7da;
+      color: #842029;
+    }
+
+    .vence-hoje {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .proximo {
+      background: #ffe5b4;
+      color: #8a5300;
+    }
+
+    .ok {
+      background: #d1e7dd;
+      color: #0f5132;
+    }
+
+    .indefinido {
+      background: #e2e3e5;
+      color: #41464b;
+    }
+
+    .sem-garantia {
+      background: #e7e3ff;
+      color: #4b3fa8;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .danger-row {
+      background: #fff1f2 !important;
+    }
+
+    .warning-row {
+      background: #fff8e1 !important;
+    }
+
+    .today-row {
+      background: #fff3cd !important;
+    }
+
+    .ok-row {
+      background: #f3fff8 !important;
+    }
+
+    .sem-garantia-row {
+      background: #f5f3ff !important;
+    }
+
+    .expand-col {
+      width: 60px;
+      text-align: center;
+    }
+
+    .expand-btn {
+      width: 30px;
+      height: 30px;
+      border: 1px solid #999;
+      background: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+      line-height: 1;
+      transition: 0.2s ease;
+    }
+
+    .expand-btn:hover {
+      background: #eef4ff;
+      border-color: #5b8def;
+    }
+
+    .expand-btn.hidden {
+      visibility: hidden;
+      cursor: default;
+    }
+
+    .child-row td {
+      background: #f8fbff !important;
+    }
+
+    .child-descricao {
+      padding-left: 28px;
+      position: relative;
+    }
+
+    .child-descricao::before {
+      content: "↳";
+      position: absolute;
+      left: 10px;
+      color: #666;
+      font-weight: bold;
+    }
+
+    .child-fornecedor {
+      color: #666;
+      font-size: 12px;
+    }
+
+    .parent-highlight td {
+      background: #edf5ff !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Controle de Contratos e Garantias</h1>
+    <div class="subtitle">
+      Painel dinâmico de vencimentos contratuais com cálculo automático de dias restantes.
+    </div>
+
+    <div class="top-bar">
+      <input type="text" id="filtro" placeholder="Buscar por fornecedor, descrição ou vencimento..." />
+
+      <div class="legend">
+        <span class="leg-vencido">Vencido</span>
+        <span class="leg-hoje">Vence hoje</span>
+        <span class="leg-alerta">Próximo do vencimento</span>
+        <span class="leg-ok">Em dia</span>
+        <span class="leg-info">Sem prazo fixo</span>
+        <span class="leg-garantia">Sem garantia</span>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="tabelaContratos">
+        <thead>
+          <tr>
+            <th class="expand-col">+</th>
+            <th>Fornecedor</th>
+            <th>Descrição</th>
+            <th>Data término contrato</th>
+            <th>Vencimento calculado</th>
+            <th>Dias para vencer</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="footer-note">
+      Regras: datas abreviadas como <strong>jun/26</strong> são interpretadas como o último dia do mês.
+      Itens como <strong>Indeterminado</strong>, <strong>Anual</strong>, <strong>10 ANOS</strong>,
+      <strong>Pagamento Mensal</strong>, <strong>PROJETO</strong> e <strong>Sem Garantia</strong>
+      são tratados de forma separada.
+    </div>
+  </div>
+
+  <!-- Atualize abaixo a lista de contratos: fornecedor, descrição e vencimento -->
+  <script>
+    const contratos = [
+      { fornecedor: "ALGAR", descricao: "Link de Internet de 500 Mbps", vencimento: "jun/26" },
+      { fornecedor: "EMBRATEL", descricao: "Link de Internet 50 Mbps", vencimento: "mar/26" },
+      { fornecedor: "LINK MUNDIVOX", descricao: "Link de Internet de 600 Mbps", vencimento: "fev/27" },
+
+      {
+        fornecedor: "FIREWALL",
+        descricao: "Licenciamento Firewall Watchguard M390",
+        vencimento: "13/10/2026",
+        licencas: [
+          { descricao: "Access Portal", vencimento: "17/12/2026" },
+          { descricao: "Application Control", vencimento: "13/10/2026" },
+          { descricao: "APT Blocker", vencimento: "13/10/2026" },
+          { descricao: "Gateway AntiVirus (AV)", vencimento: "13/10/2026" },
+          { descricao: "Cloud Connect", vencimento: "13/10/2026" },
+          { descricao: "Cloud Visibility", vencimento: "13/10/2026" },
+          { descricao: "Dimension Command", vencimento: "17/12/2026" },
+          { descricao: "DNSWatch", vencimento: "13/10/2026" },
+          { descricao: "IntelligentAV", vencimento: "13/10/2026" },
+          { descricao: "Intrusion Prevention (IPS)", vencimento: "13/10/2026" },
+          { descricao: "LiveSecurity Service", vencimento: "13/10/2026" },
+          { descricao: "Network Discovery", vencimento: "13/10/2026" },
+          { descricao: "Reputation Enabled Defense", vencimento: "13/10/2026" },
+          { descricao: "spamBlocker", vencimento: "13/10/2026" },
+          { descricao: "Support", vencimento: "13/10/2026" },
+          { descricao: "Threat Detection & Response", vencimento: "13/10/2026" },
+          { descricao: "WebBlocker", vencimento: "13/10/2026" },
+          { descricao: "AuthPoint MFA", vencimento: "24/01/2027" }
+        ]
+      },
+
+      { fornecedor: "SELBETTI", descricao: "Software de Impressão e Contabilização - Validar se Temos contrato", vencimento: "nov/25" },
+      { fornecedor: "ENGEMOURA", descricao: "Locação Nobreaks (Perpetuo)", vencimento: "02/05/2028" },
+      { fornecedor: "ENGEMOURA", descricao: "Locação Nobreaks (Multiplica Capital)", vencimento: "16/06/2026" },
+      { fornecedor: "BRASOFTWARE", descricao: "Licenciamento Microsoft (Office 365)", vencimento: "26/12/2026" },
+      { fornecedor: "ANNY", descricao: "Software de agendamento de salas de reunião via Tablets", vencimento: "mai/26" },
+      { fornecedor: "3CX", descricao: "Software de Telefonia", vencimento: "25/06/2026" },
+      { fornecedor: "MILVUS", descricao: "Software de Suporte e inventário", vencimento: "Pagamento Mensal" },
+      { fornecedor: "DOMÍNIOS DE SITE", descricao: "grupomultiplica.com.br", vencimento: "25/07/2030" },
+      { fornecedor: "DOMÍNIOS DE SITE", descricao: "multiplicacapital.com.br", vencimento: "14/09/2030" },
+      { fornecedor: "DOMÍNIOS DE SITE", descricao: "beyondseguros.com.br", vencimento: "07/07/2030" },
+
+      { fornecedor: "HASHTAG-TV", descricao: "Gerenciamento de conteúdo para TV's", vencimento: "Indeterminado" },
+      { fornecedor: "SERVIDOR HYPER-V - MULTI", descricao: "Garantia DELL POWER EDGE R540 - SERVIDOR HYPER - MULTI", vencimento: "JAN/27" },
+
+      { fornecedor: "SERVIDOR HYPER-V - HOD", descricao: "Garantia LENOVO THINK SYSTEM SR550", vencimento: "Sem Garantia" },
+      { fornecedor: "Switch Dell N1548P", descricao: "Garantia SWITCHS DELL N1548P", vencimento: "Sem Garantia" },
+
+      { fornecedor: "CERTIFICADO SSL", descricao: "Validar com Riva", vencimento: "Anual" }
+    ];
+
+    const meses = {
+      jan: 0,
+      fev: 1,
+      mar: 2,
+      abr: 3,
+      mai: 4,
+      jun: 5,
+      jul: 6,
+      ago: 7,
+      set: 8,
+      out: 9,
+      nov: 10,
+      dez: 11
+    };
+
+    const expandedRows = new Set();
+
+    function escapeHtml(texto) {
+      return String(texto ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function parseDataVencimento(valor) {
+      if (!valor) return null;
+
+      const texto = valor.trim().toLowerCase();
+
+      if (texto === "indeterminado") {
+        return { tipo: "especial", subtipo: "indeterminado", valorOriginal: valor };
+      }
+
+      if (texto === "sem garantia") {
+        return { tipo: "especial", subtipo: "sem_garantia", valorOriginal: valor };
+      }
+
+      if (texto === "anual") {
+        return { tipo: "especial", subtipo: "anual", valorOriginal: valor };
+      }
+
+      if (texto === "10 anos") {
+        return { tipo: "especial", subtipo: "10_anos", valorOriginal: valor };
+      }
+
+      if (texto === "pagamento mensal") {
+        return { tipo: "especial", subtipo: "pagamento_mensal", valorOriginal: valor };
+      }
+
+      if (texto === "projeto") {
+        return { tipo: "especial", subtipo: "projeto", valorOriginal: valor };
+      }
+
+      const dataCompleta = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (dataCompleta) {
+        const dia = parseInt(dataCompleta[1], 10);
+        const mes = parseInt(dataCompleta[2], 10) - 1;
+        const ano = parseInt(dataCompleta[3], 10);
+        const data = new Date(ano, mes, dia);
+        data.setHours(0, 0, 0, 0);
+        return { tipo: "data", data };
+      }
+
+      const dataMesAno = texto.match(/^([a-zç]{3})\/(\d{2})$/);
+      if (dataMesAno) {
+        const mesTxt = dataMesAno[1];
+        const anoTxt = parseInt(dataMesAno[2], 10);
+        const mes = meses[mesTxt];
+
+        if (mes !== undefined) {
+          const ano = 2000 + anoTxt;
+          const ultimoDia = new Date(ano, mes + 1, 0);
+          ultimoDia.setHours(0, 0, 0, 0);
+          return { tipo: "data", data: ultimoDia };
+        }
+      }
+
+      return { tipo: "especial", subtipo: "outro", valorOriginal: valor };
+    }
+
+    function formatarDataBR(data) {
+      return data.toLocaleDateString("pt-BR");
+    }
+
+    function calcularDiasRestantes(dataVencimento) {
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+
+      const diffMs = dataVencimento - hoje;
+      return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    }
+
+    function definirStatus(infoVencimento) {
+      if (!infoVencimento || infoVencimento.tipo === "especial") {
+        let textoStatus = "Sem prazo fixo";
+        let classe = "indefinido";
+        let rowClass = "";
+
+        if (infoVencimento?.subtipo === "sem_garantia") {
+          textoStatus = "Sem garantia";
+          classe = "sem-garantia";
+          rowClass = "sem-garantia-row";
+        } else if (infoVencimento?.subtipo === "indeterminado") {
+          textoStatus = "Sem prazo fixo";
+        } else if (infoVencimento?.subtipo === "pagamento_mensal") {
+          textoStatus = "Pagamento mensal";
+        } else if (infoVencimento?.subtipo === "anual") {
+          textoStatus = "Renovação anual";
+        } else if (infoVencimento?.subtipo === "projeto") {
+          textoStatus = "Vinculado a projeto";
+        } else if (infoVencimento?.subtipo === "10_anos") {
+          textoStatus = "Prazo longo";
+        }
+
+        return {
+          vencimentoCalculado: "-",
+          dias: "-",
+          statusTexto: textoStatus,
+          classe: classe,
+          rowClass: rowClass
+        };
+      }
+
+      const data = infoVencimento.data;
+      const dias = calcularDiasRestantes(data);
+
+      if (dias < 0) {
+        return {
+          vencimentoCalculado: formatarDataBR(data),
+          dias: dias,
+          statusTexto: "Vencido",
+          classe: "vencido",
+          rowClass: "danger-row"
+        };
+      }
+
+      if (dias === 0) {
+        return {
+          vencimentoCalculado: formatarDataBR(data),
+          dias: dias,
+          statusTexto: "Vence hoje",
+          classe: "vence-hoje",
+          rowClass: "today-row"
+        };
+      }
+
+      if (dias <= 30) {
+        return {
+          vencimentoCalculado: formatarDataBR(data),
+          dias: dias,
+          statusTexto: "Próximo",
+          classe: "proximo",
+          rowClass: "warning-row"
+        };
+      }
+
+      return {
+        vencimentoCalculado: formatarDataBR(data),
+        dias: dias,
+        statusTexto: "Em dia",
+        classe: "ok",
+        rowClass: "ok-row"
+      };
+    }
+
+    function possuiFilhosVisiveis(item, termo) {
+      if (!Array.isArray(item.licencas) || item.licencas.length === 0) return false;
+      if (!termo) return true;
+
+      return item.licencas.some(lic =>
+        (lic.descricao && lic.descricao.toLowerCase().includes(termo)) ||
+        (lic.vencimento && lic.vencimento.toLowerCase().includes(termo))
+      );
+    }
+
+    function contratoCombinaFiltro(item, termo) {
+      const matchPrincipal =
+        item.fornecedor.toLowerCase().includes(termo) ||
+        (item.descricao && item.descricao.toLowerCase().includes(termo)) ||
+        item.vencimento.toLowerCase().includes(termo);
+
+      const matchLicencas = possuiFilhosVisiveis(item, termo);
+
+      return matchPrincipal || matchLicencas;
+    }
+
+    function criarLinhaPrincipal(item, index, termo) {
+      const infoVencimento = parseDataVencimento(item.vencimento);
+      const status = definirStatus(infoVencimento);
+      const hasChildren = Array.isArray(item.licencas) && item.licencas.length > 0;
+      const isExpanded = expandedRows.has(index);
+
+      const tr = document.createElement("tr");
+
+      if (status.rowClass) tr.classList.add(status.rowClass);
+      if (isExpanded) tr.classList.add("parent-highlight");
+
+      tr.innerHTML = `
+        <td class="expand-col center">
+          ${
+            hasChildren
+              ? `<button class="expand-btn" data-index="${index}" title="${isExpanded ? "Recolher" : "Expandir"}">${isExpanded ? "−" : "+"}</button>`
+              : `<button class="expand-btn hidden" tabindex="-1">+</button>`
+          }
+        </td>
+        <td>${escapeHtml(item.fornecedor)}</td>
+        <td>${item.descricao ? escapeHtml(item.descricao) : '<span class="small">-</span>'}</td>
+        <td>${escapeHtml(item.vencimento)}</td>
+        <td class="center">${status.vencimentoCalculado}</td>
+        <td class="center">${status.dias}</td>
+        <td class="center"><span class="status ${status.classe}">${status.statusTexto}</span></td>
+      `;
+
+      const linhas = [tr];
+
+      if (hasChildren && isExpanded) {
+        const licencasFiltradas = item.licencas.filter(lic => {
+          if (!termo) return true;
+          return (
+            (lic.descricao && lic.descricao.toLowerCase().includes(termo)) ||
+            (lic.vencimento && lic.vencimento.toLowerCase().includes(termo)) ||
+            item.fornecedor.toLowerCase().includes(termo) ||
+            (item.descricao && item.descricao.toLowerCase().includes(termo))
+          );
+        });
+
+        licencasFiltradas.forEach(lic => {
+          const infoLic = parseDataVencimento(lic.vencimento);
+          const statusLic = definirStatus(infoLic);
+
+          const trChild = document.createElement("tr");
+          trChild.classList.add("child-row");
+          if (statusLic.rowClass) trChild.classList.add(statusLic.rowClass);
+
+          trChild.innerHTML = `
+            <td class="expand-col center"></td>
+            <td><span class="child-fornecedor">${escapeHtml(item.fornecedor)}</span></td>
+            <td class="child-descricao">${escapeHtml(lic.descricao)}</td>
+            <td>${escapeHtml(lic.vencimento)}</td>
+            <td class="center">${statusLic.vencimentoCalculado}</td>
+            <td class="center">${statusLic.dias}</td>
+            <td class="center"><span class="status ${statusLic.classe}">${statusLic.statusTexto}</span></td>
+          `;
+
+          linhas.push(trChild);
+        });
+      }
+
+      return linhas;
+    }
+
+    function renderTabela(lista, termo = "") {
+      const tbody = document.querySelector("#tabelaContratos tbody");
+      tbody.innerHTML = "";
+
+      lista.forEach((item, index) => {
+        const linhas = criarLinhaPrincipal(item, index, termo);
+        linhas.forEach(linha => tbody.appendChild(linha));
+      });
+
+      document.querySelectorAll(".expand-btn[data-index]").forEach(botao => {
+        botao.addEventListener("click", () => {
+          const index = Number(botao.dataset.index);
+
+          if (expandedRows.has(index)) {
+            expandedRows.delete(index);
+          } else {
+            expandedRows.add(index);
+          }
+
+          aplicarFiltro();
+        });
+      });
+    }
+
+    function aplicarFiltro() {
+      const termo = document.getElementById("filtro").value.toLowerCase().trim();
+      const filtrados = contratos.filter(item => contratoCombinaFiltro(item, termo));
+      renderTabela(filtrados, termo);
+    }
+
+    document.getElementById("filtro").addEventListener("input", aplicarFiltro);
+
+    renderTabela(contratos);
+  </script>
+</body>
+</html>
